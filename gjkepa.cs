@@ -4,14 +4,13 @@ using System.Numerics;
 using System.Linq;
 
 /// <summary>
-/// Обеспечивает определение факта пересечения двух многогранников. 
-/// При пересечении возвращает среднюю точку контакта, вектор выхода из коллизии и глубину проникновения. 
-/// Реализация GJK взята и доработана из статьи https://winter.dev/articles/gjk-algorithm.
-/// Реализация EPA взята и доработана из статьи https://winter.dev/articles/epa-algorithm.
-/// Для опрделения точки контакта вычисляются барицентрические координаты проекции начала координат  
-/// на возвращенный EPA ближайший к началу координат треугольник и переводятся в координаты исходных многогранников.
+/// The GJK_EPA_BСP class implements the Gilbert-Johnson-Keerthi (GJK) algorithm and the Expanding Polytope Algorithm (EPA) for collision detection between convex polyhedra.
+/// It provides methods to check for intersection between two polyhedra and to compute the contact point, penetration depth, and contact normal if an intersection occurs.
+/// The class also includes support for debugging and visualization of the algorithms' processes.
+/// The implementation of GJK was taken and adapted from the article https://winter.dev/articles/gjk-algorithm.
+/// The implementation of EPA was taken and adapted from the article https://winter.dev/articles/epa-algorithm.
+/// To determine the contact point, the barycentric coordinates of the projection of the origin were used.
 /// </summary>
-
 public class GJK_EPA_BСP
 {
     static public int gjk_max = 32; //Maximum gjk iterations
@@ -30,15 +29,27 @@ public class GJK_EPA_BСP
     static public DrawVectorDelegate DrawVector = null;
     static public DrawLineDelegate DrawLine = null;
     static public LogDelegate Log = null;
-#endif  
+#endif
 
+    /// <summary>
+    /// Determines if two convex polyhedra intersect using the Gilbert-Johnson-Keerthi (GJK) algorithm and,
+    /// if they do, computes the contact point, penetration depth, and contact normal using the Expanding Polytope Algorithm (EPA).
+    /// </summary>
+    /// <param name="polyhedron1">An array of Vector3 representing the vertices of the first polyhedron.</param>
+    /// <param name="polyhedron2">An array of Vector3 representing the vertices of the second polyhedron.</param>
+    /// <param name="contactPoint">The point of contact between the two polyhedra if an intersection occurs.</param>
+    /// <param name="penetrationDepth">The depth of penetration between the two polyhedra if an intersection occurs.</param>
+    /// <param name="contactNormal">The normal of the contact point between the two polyhedra if an intersection occurs.</param>
+    /// <returns>
+    /// Returns true if the polyhedra intersect, otherwise false. If true, the contactPoint, penetrationDepth, and contactNormal out parameters are set.
+    /// </returns>
     public static bool CheckIntersection(Vector3[] polyhedron1, Vector3[] polyhedron2, out Vector3 contactPoint, out float penetrationDepth, out Vector3 contactNormal)
     {
         contactPoint = new Vector3(0, 0, 0);
         penetrationDepth = 0;
         contactNormal = new Vector3(0, 0, 0);
 
-        // Инициализация GJK
+        // GJK initialization
         Simplex simplex = new Simplex();
         Vector3 direction = Vector3.Subtract(polyhedron1[0], polyhedron2[0]);
 
@@ -56,23 +67,23 @@ public class GJK_EPA_BСP
 
             if (Vector3.Dot(support.Point, direction) <= 0)
             {
-                return false; // Нет пересечения
+                return false; // No intersection
             }
 
             simplex.AddSupportPoint(support);
 
             if (simplex.ContainsOrigin(ref direction))
             {
-                // Обнаружено пересечение, продолжаем с EPA
-#if GJKEPA_DEBUG                
+                // Intersection detected, proceed with EPA
+#if GJKEPA_DEBUG
                 //simplex.DebugDraw();
 #endif
 
                 int epa_cnt = EPA(polyhedron1, polyhedron2, simplex, out contactNormal, out penetrationDepth, out contactPoint);
 
-#if GJKEPA_DEBUG                
+#if GJKEPA_DEBUG
                 DrawVector(contactPoint, contactNormal * penetrationDepth, 4278222848u); //Green out vector
-                DrawPoint(contactPoint, 4294901760u); //Red pont
+                DrawPoint(contactPoint, 4294901760u); //Red point
                 Log(" gjk=" + gjk_cnt.ToString() + "  , epa=" + epa_cnt.ToString());
 #endif
                 return true;
@@ -88,9 +99,9 @@ public class GJK_EPA_BСP
 
     public struct SupportPoint
     {
-        public Vector3 Point; // Точка поддержки
-        public int Index1;    // Индекс в первом многограннике
-        public int Index2;    // Индекс во втором многограннике
+        public Vector3 Point; // Support point
+        public int Index1;    // Index in the first polyhedron
+        public int Index2;    // Index in the second polyhedron
 
         public SupportPoint(Vector3 point, int index1, int index2)
         {
@@ -250,7 +261,7 @@ public class GJK_EPA_BСP
 
         private bool ContainsOriginTriangle(ref Vector3 direction)
         {
-            //порядок точек такой, что a всегда последняя добавленная точка
+            //The order of the points is such that a is always the last point added.
             SupportPoint a = points[0];
             SupportPoint b = points[1];
             SupportPoint c = points[2];
@@ -316,7 +327,7 @@ public class GJK_EPA_BСP
 
         private bool ContainsOriginLine(ref Vector3 direction)
         {
-            //порядок точек такой, что a всегда вновь добавленная точка
+            // The order of points is such that 'a' is always the newly added point
             SupportPoint a = points[0];
             SupportPoint b = points[1];
 
@@ -325,7 +336,7 @@ public class GJK_EPA_BСP
             Vector3 ao = -a.Point;
 
             if (Vector3.Dot(ab, ao) > 0)
-                //строим перпендикуляр к линии в направлении начала координат
+                // Construct a perpendicular to the line in the direction of the origin
                 direction = Vector3.Cross(Vector3.Cross(ab, ao), ab);
             else
             {
@@ -489,7 +500,7 @@ public class GJK_EPA_BСP
                     }
                 }
 
-                //!Возможна ситуация при которой из-за невалидных точек (нули, NaN) uniqueEdges не содержит ребер, надо проработать                
+                //It is possible to encounter a situation where, due to invalid points(zeros, NaN), uniqueEdges does not contain any edges, which needs to be addressed.                
 
                 List<int> newFaces = new List<int>();
                 for (int i = 0; i < uniqueEdges.Count; i++)
@@ -499,7 +510,7 @@ public class GJK_EPA_BСP
                     newFaces.Add(f.Item2);
                     newFaces.Add(polytope.Count);
 
-                    //направление соблюдается против часовой
+                    //The direction is maintained counterclockwise.
                 }
 
                 polytope.Add(support);
@@ -546,30 +557,30 @@ public class GJK_EPA_BСP
         SupportPoint b = polytope[faces[minFace * 3 + 1]];
         SupportPoint c = polytope[faces[minFace * 3 + 2]];
 
-        //Находим проекцию начала координат на плоскость треугольника
+        // Finding the projection of the origin onto the plane of the triangle
         float distance = Vector3.Dot(a.Point, minNormal);
         Vector3 projectedPoint = -distance * minNormal;
 
-        //Получаем барицентрические координаты этой проекции в треугольнике, принадлежащем симпексу
+        // Getting the barycentric coordinates of this projection within the triangle belonging to the simplex
         (float u, float v, float w) = GetBarycentricCoordinates(projectedPoint, a.Point, b.Point, c.Point);
 
-        //Берем соотвествующий треугольник из 1 многогранника
+        // Taking the corresponding triangle from the first polyhedron
         Vector3 a1 = polyhedron1[a.Index1];
         Vector3 b1 = polyhedron1[b.Index1];
         Vector3 c1 = polyhedron1[c.Index1];
 
-        //Точка контакта на 1 многограннике
+        // Contact point on the first polyhedron
         Vector3 contactPoint1 = u * a1 + v * b1 + w * c1;
 
-        //Берем соотвествующий треугольник из 2 многогранника
+        // Taking the corresponding triangle from the second polyhedron
         Vector3 a2 = polyhedron2[a.Index2];
         Vector3 b2 = polyhedron2[b.Index2];
         Vector3 c2 = polyhedron2[c.Index2];
 
-        //Точка контакта на 2 многограннике
+        // Contact point on the second polyhedron
         Vector3 contactPoint2 = u * a2 + v * b2 + w * c2;
 
-        contactPoint = (contactPoint1 + contactPoint2) / 2; //Возвращаем среднюю точку
+        contactPoint = (contactPoint1 + contactPoint2) / 2; // Returning the midpoint
         contactNormal = minNormal;
         PenetrationDepth = minDistance + 0.001f;
 
@@ -578,10 +589,10 @@ public class GJK_EPA_BСP
 
     public static (float u, float v, float w) GetBarycentricCoordinates(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
     {
-        // Векторы от вершины A к вершинам B и C
+        // Vectors from vertex A to vertices B and C
         Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
 
-        // Вычисляем скалярные произведения
+        // Compute dot products
         float d00 = Vector3.Dot(v0, v0);
         float d01 = Vector3.Dot(v0, v1);
         float d11 = Vector3.Dot(v1, v1);
@@ -595,12 +606,12 @@ public class GJK_EPA_BСP
             throw new InvalidOperationException("Cannot compute barycentric coordinates for a degenerate triangle.");
         }
 
-        // Вычисляем барицентрические координаты
+        // Compute barycentric coordinates
         float v = (d11 * d20 - d01 * d21) / denom;
         float w = (d00 * d21 - d01 * d20) / denom;
         float u = 1.0f - v - w;
 
         return (u, v, w);
     }
-  
+
 }
