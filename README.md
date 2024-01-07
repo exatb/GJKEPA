@@ -1,2 +1,2 @@
 # GJKEPA
-Pure C# GJK and EPA realisation. Fast and stable, with minimum external link.   
+Pure C# implementation of GJK and EPA. Fast and stable, with a minimum of external links.   
