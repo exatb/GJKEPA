@@ -4,14 +4,14 @@ using System.Numerics;
 using System.Linq;
 
 /// <summary>
-/// The GJK_EPA_BÑP class implements the Gilbert-Johnson-Keerthi (GJK) algorithm and the Expanding Polytope Algorithm (EPA) for collision detection between convex polyhedra.
+/// The GJK_EPA_BCP class implements the Gilbert-Johnson-Keerthi (GJK) algorithm and the Expanding Polytope Algorithm (EPA) for collision detection between convex polyhedra.
 /// It provides methods to check for intersection between two polyhedra and to compute the contact point, penetration depth, and contact normal if an intersection occurs.
 /// The class also includes support for debugging and visualization of the algorithms' processes.
 /// The implementation of GJK was taken and adapted from the article https://winter.dev/articles/gjk-algorithm.
 /// The implementation of EPA was taken and adapted from the article https://winter.dev/articles/epa-algorithm.
 /// To determine the contact point, the barycentric coordinates of the projection of the origin were used.
 /// </summary>
-public class GJK_EPA_BÑP
+public class GJK_EPA_BCP
 {
     static public int gjk_max = 32; //Maximum gjk iterations
     static public int epa_max = 32; //Maximum epa iterations
