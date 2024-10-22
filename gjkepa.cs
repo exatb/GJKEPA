@@ -1,6 +1,12 @@
+#define OpenTK //Define using OpenTK here
+
 using System;
 using System.Collections.Generic;
+#if  OpenTK
+using OpenTK.Mathematics;
+#else
 using System.Numerics;
+#endif
 using System.Linq;
 
 /// <summary>
@@ -381,7 +387,13 @@ public class GJK_EPA_BCP
             Vector3 c = polytope[faces[i + 2]].Point;
 
             Vector3 normal = Vector3.Cross(b - a, c - a);
-            float l = normal.Length();
+            
+            #if OpenTK
+            float l = normal.Length; //For OpenTK.Mathematics
+            #else
+            float l = normal.Length(); //For System.Numeric
+            #endif
+
             float distance = float.MaxValue;
 
             //If vectors is colliniar we have degenerate face
@@ -539,7 +551,7 @@ public class GJK_EPA_BCP
         }
 
 
-#if GJKEPA_DEBUG   
+#if GJKEPA_DEBUG
         /*
         DrawPolytope(polytope, faces);
         UInt32 clr = 4294901760u; // Red
@@ -601,10 +613,12 @@ public class GJK_EPA_BCP
         float denom = d00 * d11 - d01 * d01;
 
         // Check for a zero denominator before division
+        /*
         if (Math.Abs(denom) <= Epsilon)
         {
+            // For future it could be processed
             throw new InvalidOperationException("Cannot compute barycentric coordinates for a degenerate triangle.");
-        }
+        }*/
 
         // Compute barycentric coordinates
         float v = (d11 * d20 - d01 * d21) / denom;
