@@ -23,7 +23,9 @@ penetrationDepth - The depth of penetration between the two polyhedra if an inte
 contactNormal - The normal of the contact point between the two polyhedra if an intersection occurs
 ```
 
-However, if you need to understand how these algorithms work, you can use GJKEPA_DEBUG and define a function for logging, drawing points, vectors and lines.
+If you need to understand how these algorithms work, you can define "GJKEPA_DEBUG" and define a function for logging, drawing points, vectors and lines.
+
+You can use System.Numeric vectors or OpenTK.Mathematics vectors. For OpenTK use the "OpenTK" definition.
 
 These algorithms are a good choice for physics solvers. It can be used for simulation or games.
 
