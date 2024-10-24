@@ -605,25 +605,76 @@ public class GJK_EPA_BCP
         Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
 
         // Compute dot products
-        float d00 = Vector3.Dot(v0, v0);
+        float d00 = Vector3.Dot(v0, v0); // Same as length squared V0
         float d01 = Vector3.Dot(v0, v1);
-        float d11 = Vector3.Dot(v1, v1);
+        float d11 = Vector3.Dot(v1, v1); // Same as length squared V1
         float d20 = Vector3.Dot(v2, v0);
         float d21 = Vector3.Dot(v2, v1);
         float denom = d00 * d11 - d01 * d01;
 
-        // Check for a zero denominator before division
-        /*
+        float u = 0;
+        float v = 0;
+        float w = 0;
+
+        // Check for a zero denominator before division = check for degenerate triangle (area is zero)
         if (Math.Abs(denom) <= Epsilon)
         {
-            // For future it could be processed
-            throw new InvalidOperationException("Cannot compute barycentric coordinates for a degenerate triangle.");
-        }*/
+            // The triangle is degenerate
 
-        // Compute barycentric coordinates
-        float v = (d11 * d20 - d01 * d21) / denom;
-        float w = (d00 * d21 - d01 * d20) / denom;
-        float u = 1.0f - v - w;
+            // Check if all vertices coincide (triangle collapses to a point)
+            if (d00 <= Epsilon && d11 <= Epsilon)
+            {
+                // All edges are degenerate (vertices coincide at a point)
+                // Return barycentric coordinates corresponding to vertex a
+                u = 1;
+                v = 0;
+                w = 0;
+            }
+            else
+            {
+                // Seems triangle collapses to a line (vertices are colinear)
+                // We can check it:
+                // Vector3 cross = Vector3.Cross(v0, v1);
+                // if (Vector3.Dot(cross, cross) <= Epsilon).... 
+                // But if the triangle area is close to zero and the triangle has not colapsed to a point then it has colapsed to a line
+                // Use edge AB if it's not degenerate
+                if (d00 > Epsilon)
+                {
+                    // Compute parameter t for projection of point p onto line AB
+                    float t = Vector3.Dot(v2, v0) / d00;
+                    // if |t|>1 then p lies in AC but we can use u,v,w calculated to AB with a small error    
+                    // Barycentric coordinates for edge AB
+                    u = 1.0f - t;   // weight for vertex a
+                    v = t;          // weight for vertex b
+                    w = 0.0f;       // vertex c does not contribute
+                }
+                // Else, use edge AC 
+                else if (d11 > Epsilon)
+                {
+                    // Compute parameter t for projection of point p onto line AC
+                    float t = Vector3.Dot(v2, v1) / d11;
+                    // Barycentric coordinates for edge AC
+                    u = 1.0f - t; // weight for vertex a
+                    v = 0.0f;     // vertex b does not contribute
+                    w = t;        // weight for vertex c
+                }
+                else
+                {
+                    // The triangle is degenerate in an unexpected way
+                    // Return barycentric coordinates corresponding to vertex a                    
+                    u = 1;
+                    v = 0;
+                    w = 0;
+                }
+            }
+
+        } else
+        { 
+            // Compute barycentric coordinates
+            v = (d11 * d20 - d01 * d21) / denom;
+            w = (d00 * d21 - d01 * d20) / denom;
+            u = 1.0f - v - w;
+        }
 
         return (u, v, w);
     }
